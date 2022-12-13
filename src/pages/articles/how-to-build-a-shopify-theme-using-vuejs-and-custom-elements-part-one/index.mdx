@@ -1,0 +1,182 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2020-10-10',
+  title:
+    'How to build a Shopify theme using Vuejs and Custom Elements - Part 1',
+  description:
+    'Idea and challenges of building a Shopify theme using Vuejs and Custom Elements.',
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+This is a 2 part post
+
+- part 1: Idea (current)
+- [part 2: implementation](/articles/how-to-build-a-shopify-theme-using-vuejs-and-custom-elements-part-two)
+
+Utilizing the power of [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) it is now possible to create framework-agnostic complex UIs using your favourite JavaScript framework. Recently, I used [vue-custom-element](https://github.com/karol-f/vue-custom-element) to build a Shopify theme. In this article which is my first ever personal blog post, I am going to explain the idea and the challenges I faced implementing it.
+
+## Why
+
+That's mainly my personal preference to experience developing with Vuejs and moving the edges of its applications. Turns out you end up with a theme that is more flexible than a conventional Shopify theme.
+
+## The idea
+
+Simply put, the idea is to use custom elements in Liquid template files and pass data to them as `props` and `slot`s. For example, the following would be a custom element that accepts a Liquid object as the `orders` prop.
+
+```html
+<my-orders orders="{{-customer.orders | json-}}"></my-orders>
+```
+
+### Liquid is not solid
+
+Shopify uses [Liquid](https://shopify.github.io/liquid/) files which are like [Blade](https://laravel.com/docs/8.x/blade) template files if you come from a Laravel world, but the difference is that Blade is designed for developers and Liquid seems to be more end user-oriented resulting in a set of less flexible API.
+
+Here is the minimal snippet to display cart items in `templates/cart.liquid` file
+
+```html
+<table class="responsive-table">
+  <thead>
+    <tr>
+      <th colspan="2">Product</th>
+      <th>Price</th>
+      <th>Quantity</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in cart.items %}
+      <tr >
+        <td>
+          {% if item.image != blank %}
+          <a href="{{ item.url | within: collections.all }}">
+            {{ item | img_url: '240x240' | img_tag: item.title }}
+          </a>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{{ item.url }}">{{ item.product.title }}</a>
+
+          {% unless item.product.has_only_default_variant %}
+            <p>{{ item.variant.title }}</p>
+          {% endunless %}
+
+          <p>{{ item.vendor }}</p>
+
+          {%- assign property_size = item.properties | size -%}
+
+          {% if property_size > 0 %}
+            {% for p in item.properties %}
+                {% unless p.last== blank %}
+                    {{ p.first }}:
+                    {% if p.last contains '/uploads/' %}
+                        <a href="{{ p.last }}">{{ p.last | split: '/' | last }}</a>
+                    {% else %}
+                        {{ p.last }}
+                    {% endif %}
+                {% endunless %}
+            {% endfor %}
+        {% endif %}
+
+          <a href="/cart/change?line={{ forloop.index }}&amp;quantity=0">
+            <small>Remove</small>
+          </a>
+        </td>
+
+        <td data-label="{{ 'cart.label.price' | t }}">
+            {% if item.original_line_price != item.line_price %}
+                {{ item.price | money }} <s>{{ item.original_price | money }}</s>
+            {% else %}
+                {{ item.price | money }}
+            {% endif %}
+        </td>
+
+        <td>
+          <input
+            type="number"
+            name="updates[]"
+            id="updates_{{ item.key }}"
+            value="{{ item.quantity }}"
+            min="0"
+          />
+        </td>
+
+        <td>
+          {{ item.line_price | money }}
+        </td>
+      </tr>
+
+      {% endfor %}
+    </td>
+  </tbody>
+</table>
+```
+
+Boring! I feel like in 2008! Also, it is static, when a user updates the quantity the page reloads, when they remove an item, the page reloads. To add a modern look and feel to it (AKA. better UX) the only way to go for is to add jQuery or JS code to the page that prevents the form submission, communicates to [Cart API](https://shopify.dev/docs/themes/ajax-api/reference/cart) and manipulate the DOM.
+
+Another thing that I don't appreciate about Liquid is that it encourages to implement the logic alongside the view. That leads to unreadable and hard to maintain code. That is not the case in Balde, since you have the option to abstract away the logic to the controller which is not possible in Shopify.
+
+### Custom Element
+
+Using Custom Elements it is possible to move all that into Vuejs to have some fun. In that sense, the `templates/cart.liquid` would become.
+
+```html
+{% if cart.item_count > 0 %}
+  <cart-items items:'{{-cart.items | json-}}'></cart-items>
+{% else %}
+  <p>Cart is empty</p>
+{% endif %}
+```
+
+Awesome! Now we can handle it using Vuejs.
+
+### Vue Components
+
+The `CartItems.vue` file can be registered as a Custom Element using the [vue-custom-element](https://github.com/karol-f/vue-custom-element) package.
+
+```html
+<template>
+  <LineItem v-for="line in cartItems" :key="line.id" :item="line"> </LineItem>
+</template>
+
+<script>
+  export default {
+    props: ['items'],
+    data() {
+      return {
+        cartItems: [],
+      }
+    },
+    created() {
+      this.cartItems = parseJson(this.items)
+    },
+  }
+</script>
+```
+
+Here we accept the `items` as a prop and since it will be a JSON String, we need to use `JSON.parse` to convert it to an Object.
+
+## State Management
+
+It would be nice to keep the cart items as an application state and make it accessible to all other components. Maybe we need to show a counter on the cart icon at the header. It could use our state and that will make it effortlessly reactive. When a user adds an item to the cart. We mutate the cart state and instantly our little counter gets updated.
+
+To do that we can use any state management library like [Vuex](https://vuex.vuejs.org/). We can create a Vuex instance and pass it to all registered Custom elements.
+
+But the problem is that this is not a SPA, Vuex store is an in-memory state, that is, whenever you navigate to another Shopify route the Vuex store data are destroyed. There is a simple solution to that. We can persist state in `window.LocalStorage`. That way we hydrate the store from LocalStorage when Vuex is loaded.
+
+Aside from reactivity, another benefit to this is that it provides us with a significant little UX improvement. I have noticed many users open PDP pages in New Tab while browsing the product list. Then if you go to a product page and add one to your cart, the other tabs don't have any idea about the state. So, they need to refresh again which is not going to make your UX developer happy.
+
+Now since we are persisting the state, we can also listen to
+
+```javascript
+window.addEventListener('storage', function (event) {...})
+```
+
+and mutate the state. Bingo! all open tabs will get updates if you add a product to the cart.
+
+### What is next
+
+In [part 2](/articles/how-to-build-a-shopify-theme-using-vuejs-and-custom-elements-part-two) I will explain the implementation and project structure in more detail.

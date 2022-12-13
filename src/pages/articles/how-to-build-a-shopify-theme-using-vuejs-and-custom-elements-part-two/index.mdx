@@ -1,0 +1,333 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+import image1 from './vue-components.gif'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2020-10-24',
+  title:
+    'How to build a Shopify theme using Vuejs and Custom Elements - Part 2',
+  description:
+    'In this post I introduce a proof-of-concept Shopify theme using Vuejs and Custom Elements. I also included the source in Github.',
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+Continuing on the idea presented at [part 1](/articles/how-to-build-a-shopify-theme-using-vuejs-and-custom-elements-part-one) on this series, in this post I am going to extend on that. I am going to describe the theme directory structure and how it builds into a Shopify theme.
+
+**Repository**: [https://github.com/Youhan/shopify-vuejs-theme](https://github.com/Youhan/shopify-vuejs-theme)
+
+## Directory structure
+
+```bash
+.
+├── dist
+└── src
+    ├── assets
+    ├── config
+    ├── layout
+    ├── locales
+    ├── scripts
+    │   ├── account.js
+    │   ├── cart.js
+    │   ├── collection.js
+    │   ├── home.js
+    │   ├── layout.js
+    │   ├── product.js
+    │   └── search.js
+    ├── sections
+    ├── snippets
+    ├── styles
+    ├── templates
+    └── vue
+        ├── components
+        │   ├── custom-element
+        │   └── global
+        ├── entry
+        │   ├── account
+        │   │   ├── components
+        │   │   └── custom-elements
+        │   ├── cart
+        │   │   ├── components
+        │   │   └── custom-elements
+        │   ├── collection
+        │   │   ├── components
+        │   │   └── custom-elements
+        │   ├── home
+        │   │   ├── components
+        │   │   └── custom-elements
+        │   ├── layout
+        │   │   ├── components
+        │   │   └── custom-elements
+        │   ├── product
+        │   │   ├── components
+        │   │   └── custom-elements
+        │   └── search
+        │       ├── components
+        │       └── custom-elements
+        ├── filters
+        ├── plugins
+        ├── store
+        └── utils
+```
+
+`assets, config, layout, locales, sections, snippets, templates` directories need to be copied directly to the `dist` folder as they are standard Shopify directories.We use `styles` to store our CSS files and `scripts` for our JavaScript files. `vue` folder contains the vue apps.
+
+For each shopify template file we may need to build a javascript file which bring us the Webpack.
+
+## Webpack Setup
+
+What we need to is consider all `.js` files in the `scripts` directory as an entry point and output the the built file in `src/assets/` directory. `getEntries` function accepts a path and returns an array of entry names.
+
+```javascript
+const webpackJS = {
+  entry: getEntries('src/scripts/*.js'),
+  output: {
+    path: path.join(__dirname, 'src/assets'),
+    filename: '[name].js',
+  },
+}
+```
+
+Then we need a rule for vue files and js files. Below rule will find all .vue files and loads them using `vue-loader` plugin.
+
+```javascript
+
+{
+    test: /\.vue$/,
+    loader: "vue-loader",
+    include: [
+        path.resolve(__dirname, "src"),
+        // any other package that we need to build
+}
+```
+
+For JavaScript files we add a rule to build them using babel
+
+```javascript
+{
+    test: /\.js$/,
+    use: {
+        loader: "babel-loader"
+    },
+    exclude: /node_modules/
+},
+```
+
+Then we include the vue-loader and extract css plugins.
+
+```javascript
+plugins: [
+  new VueLoaderPlugin(),
+
+  new MiniCssExtractPlugin({
+    filename: '[name].css',
+  }),
+]
+```
+
+The complete file can be found here. [webpack.config.js](https://github.com/Youhan/shopify-vuejs-theme/blob/master/webpack.config.js)
+
+## Vue
+
+`vue/components` contains the global components and global custom elements. For each entry point we can add a directory that will contain all private components and private custom elements to itself. And it also contains a `index.js` to create and register custom elements using Vue.
+
+## Example Custom elements using Vuex store
+
+Let's create two components.
+
+- an add to cart button
+- a cart counter in the header
+
+We also need to keep the count of cart items in a persistent place so that it would not reset when you navigate to other page. In the image below you can see whenever we click on add to cart button, the `window.localStorage` API is called to persist the value.
+
+<Image src={image1} alt="Shopify vue vuex" />
+
+### Vue Entry
+
+First we include the `src/vue/entry/layout/index.js` in `src/scripts/layout.js` file
+
+```javascript
+// load vue
+import '@vue/entry/layout/index.js'
+```
+
+The `src/vue/entry/layout/index.js` file will look like below:
+
+```javascript
+import Vue from 'vue'
+import Vuex from 'vuex'
+import store from '@vue/store'
+import 'document-register-element'
+
+/**
+ * import a list of custom elements / web components
+ * =================================================================*/
+import customElements from './custom-elements/index.js'
+
+/**
+ * import all needed vue components as global components
+ * =================================================================*/
+import './components/index.js'
+
+/**
+ * Setup Vuex
+ * =================================================================*/
+Vue.use(Vuex)
+const vuexStore = new Vuex.Store(store)
+
+/**
+ * Register Custom Elements
+ * =================================================================*/
+Object.entries(customElements).forEach((component) => {
+  const [name, module] = component
+  module.store = vuexStore
+  Vue.customElement(name, module)
+  Vue.config.ignoredElements = [name]
+})
+```
+
+### Vue Components
+
+To include all regular vue components we need to include all global components that will be share across all entry points. These components are mainly layout related components (if any).
+
+In the `src/vue/entry/layout/components/index.js` we include global and private components
+
+```javascript
+import Vue from 'vue'
+
+/**
+ * Register global components
+ * =================================================================*/
+const requireGlobalComponent = require.context(
+  '../../../components/global/',
+  true,
+  /\.vue$/
+)
+RegisterComponents(requireGlobalComponent)
+
+/**
+ * Register local components
+ * =================================================================*/
+const requireComponent = require.context('.', true, /\.vue$/)
+RegisterComponents(requireComponent)
+```
+
+The `RegisterComponents` function is just looping over what is passed by `require.context()` and registers them using `Vue.component()`
+
+```javascript
+import { upperFirst, camelCase } from '@vue/utils/Helpers.js'
+
+function RegisterComponents(requireComponents) {
+  requireComponents.keys().forEach((fileName) => {
+    // get component config
+    const componentConfig = requireComponents(fileName)
+    // get pascal-case name of the component
+    const componentName = upperFirst(
+      camelCase(fileName.replace(/^\.\//, '').replace(/\.\w+$/, ''))
+    )
+    // register the component Globally
+    Vue.component(componentName, componentConfig.default || componentConfig)
+  })
+}
+```
+
+### Vue Custom Elements
+
+Now that we have all Vue components registered, let's see how we register the custom elements.
+
+We have two custom elements that we want to use in our Liquid files.
+
+- add to cart button
+- cart counter (in the header)
+
+Inside `src/vue/entry/layout/custom-elements/index.js` file, we import the globally available custom elements as a list which is exported by `vue/components/layout.js`
+
+```javascript
+// Layout specific
+import layoutElements from '@vue/components/layout.js'
+
+export default {
+  ...layoutElements,
+  // any local custom element here
+}
+```
+
+The `vue/components/layout.js` file itself is just a list of imports, like so:
+
+```javascript
+import ExampleAddToCart from '@vue/components/custom-element/ExampleAddToCart.vue'
+import ExampleCartCounter from '@vue/components/custom-element/ExampleCartCounter.vue'
+
+export default {
+  'theme-add-to-cart': ExampleAddToCart,
+  'theme-cart-counter': ExampleCartCounter,
+}
+```
+
+In this case we don't have any local custom element, so it is just to import the global (layout) custom elements.
+
+At this point our 2 custom elements can be used in Liquid files. Let's see how they look like
+
+### Add to cart button
+
+```html
+<template>
+  <div class="flex flex-col items-center justify-center">
+    <h2 class="font-heading mb-4 text-lg">Example Add to cart Button</h2>
+    <button
+      class="bg-brand-500 hover:bg-brand-700 rounded px-4 py-2 text-white transition duration-200"
+      v-on:click="addOne"
+    >
+      Click to simulate Add to cart
+    </button>
+    <p class="mt-4">You have {{ count }} items in your cart.</p>
+    <p class="mt-4">You can also reload this page or navigate to other pages</p>
+  </div>
+</template>
+
+<script>
+  import { mapMutations, mapState } from 'vuex'
+  export default {
+    computed: {
+      ...mapState('cart', ['count']),
+    },
+    methods: {
+      ...mapMutations('cart', ['addOne']),
+    },
+  }
+</script>
+```
+
+Here we are using `mapMutations` to provide this component with a way to mutate the store state and `mapState` to get the state.
+
+### Cart Counter
+
+This component is just displaying the state.
+
+```html
+<template>
+  <div>({{ count }})</div>
+</template>
+
+<script>
+  import { mapState } from 'vuex'
+
+  export default {
+    computed: {
+      ...mapState('cart', ['count']),
+    },
+  }
+</script>
+```
+
+## Summary
+
+You can find the complete code I put on [https://github.com/Youhan/shopify-vuejs-theme](https://github.com/Youhan/shopify-vuejs-theme)
+
+- for each Shopify template file we build a Javascript file
+- each Javascript file can/may include Vue custom elements
+- each Webpack entry point is responsible to bundle regular js files and also can include a number of custom elements.
+- some custom elements can be shared as global custom elements
+- other custom elements are local to each entry point and are only bundled in one of the js files.
