@@ -92,3 +92,20 @@ Card.Eyebrow = function CardEyebrow({
     </Component>
   )
 }
+
+Card.Tags = function CardTags({ tags }) {
+  return (
+    <div className="">
+      <div className="mb-3 flex items-center space-x-2  text-sm text-zinc-400 dark:text-zinc-500">
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="rounded bg-zinc-400/10 px-2 py-1 font-medium text-zinc-800 dark:text-zinc-300"
+          >
+            # {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
