@@ -38,7 +38,7 @@ Card.Link = function CardLink({ children, ...props }) {
 
 Card.Title = function CardTitle({ as: Component = 'h2', href, children }) {
   return (
-    <Component className="text-base font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
+    <Component className="text-lg font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
       {href ? <Card.Link href={href}>{children}</Card.Link> : children}
     </Component>
   )
@@ -100,7 +100,7 @@ Card.Tags = function CardTags({ tags }) {
         {tags.map((tag) => (
           <span
             key={tag}
-            className="rounded bg-zinc-400/10 px-2 py-1 font-medium text-zinc-800 dark:text-zinc-300"
+            className="text-sm font-medium text-zinc-800 dark:text-zinc-300"
           >
             # {tag}
           </span>

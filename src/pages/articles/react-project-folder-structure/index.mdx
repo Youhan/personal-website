@@ -1,0 +1,63 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+import image1 from './vue-components.gif'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2022-12-27',
+  title: 'React project folder structure',
+  description: 'Some ideas on how to structure your react project',
+  tags: ['React Tips', 'Snippets'],
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+In this article, I will share some ideas on how to structure your react project.
+
+```bash
+src
+├── components
+├── context
+├── data
+├── hooks
+├── pages
+├── services
+├── utils
+├── App.jsx
+└── main.js
+```
+
+## components
+
+All of our components will be in this folder. We can have subfolders for each component type.
+For example, we can have a folder for all of our buttons, another folder for all of our inputs, and so on.
+These are mostly components that are shared between pages and don't implement any business logic.
+
+## pages
+
+This folder contains all of our pages. Each page is a component that is exported as default.
+Components in this folder represent different routes in our application.
+
+## context
+
+In the application we gonna always have a react context or Redux context to use.
+For example an entire shopping cart can live in a context.
+We put all of our contexts in this folder.
+
+## data
+
+This is a folder to store all of our data. Any JSON data that we need to use in our application should be stored here.
+
+## hooks
+
+This is for all of our custom hooks, such as `useLocalStorage`, `useFetch`, and so on.
+
+## services
+
+This is for all of our services. For example, we can have a service to fetch data from an API.
+
+## utils
+
+A collection of small functions mosly pure functions. For example, a function to convert a string to a slug.
+Another example would be a function to convert a number to a currency string.

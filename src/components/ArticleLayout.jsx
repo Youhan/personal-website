@@ -50,17 +50,34 @@ export function ArticleLayout({
               </button>
             )}
             <article>
-              <header className="flex flex-col">
+              <header className="flex flex-col items-start">
                 <h1 className="mt-6 text-4xl font-bold tracking-tight text-zinc-800 dark:text-zinc-100 sm:text-5xl">
                   {meta.title}
                 </h1>
-                <time
-                  dateTime={meta.date}
-                  className="order-first flex items-center text-base text-zinc-400 dark:text-zinc-500"
-                >
-                  <span className="h-4 w-0.5 rounded-full bg-zinc-200 dark:bg-zinc-500" />
-                  <span className="ml-3">{formatDate(meta.date)}</span>
-                </time>
+                <div className="order-first flex flex-col items-center md:flex-row md:items-start">
+                  <time
+                    dateTime={meta.date}
+                    className="flex items-center text-base text-zinc-400 dark:text-zinc-500"
+                  >
+                    <span className="h-4 w-0.5 rounded-full bg-zinc-200 dark:bg-zinc-500" />
+                    <span className="ml-3">{formatDate(meta.date)}</span>
+                  </time>
+
+                  {/* Tags */}
+                  <div className="ml-6 flex space-x-4">
+                    {meta.tags &&
+                      meta.tags.map((tag) => {
+                        return (
+                          <span
+                            key={tag}
+                            className="text-base text-zinc-400 dark:text-zinc-500"
+                          >
+                            # {tag}
+                          </span>
+                        )
+                      })}
+                  </div>
+                </div>
               </header>
               <Prose className="mt-8">{children}</Prose>
             </article>
