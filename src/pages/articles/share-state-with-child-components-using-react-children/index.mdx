@@ -93,3 +93,62 @@ because we can't directly modify the props of a child component. We have to clon
 
 With this approach, we don't need to pass the state and the setter function to the children manually. I think it is a great way to
 avoid poluting the code with props.
+
+## What if one of the children is not a React component?
+
+What happens if we want to add a `div` or a `p` tag as a child of the parent component? In that case, we are trying to clone and set props
+on a element that it's `type` is not a function.
+
+```jsx
+const App = () => {
+  return (
+    <div>
+      <Parent>
+        <SetterChild />
+        <div>Some text</div>
+        <DisplayChild />
+      </Parent>
+    </div>
+  )
+}
+```
+
+On thing we can do it to check the `type` of the `child` and if it is not a function, we can just return the child as is.
+
+```jsx
+const Parent = ({ children }) => {
+  const [state, setState] = useState('')
+
+  return (
+    <div>
+      {React.Children.map(children, (child) => {
+        if (typeof child.type !== 'function') {
+          return child
+        }
+        return React.cloneElement(child, { state, setState })
+      })}
+    </div>
+  )
+}
+```
+
+We can also restrict the use of DOM elements inside the parent component by checking the `child.type` against `string`.
+
+```jsx
+const Parent = ({ children }) => {
+  const [state, setState] = useState('')
+
+  return (
+    <div>
+      {React.Children.map(children, (child) => {
+        if (typeof child.type === 'string') {
+          throw new Error(
+            `<${child.type} /> DOM elements are not allowed inside <Parent />`
+          )
+        }
+        return React.cloneElement(child, { state, setState })
+      })}
+    </div>
+  )
+}
+```
