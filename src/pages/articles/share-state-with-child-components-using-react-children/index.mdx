@@ -152,3 +152,77 @@ const Parent = ({ children }) => {
   )
 }
 ```
+
+## Problems with this approach
+
+One big problem I can see with this is that it only works with one level of children. The following example will not work because
+the Parent component is using `React.Children.map` and passes props to the first level childs not all of them.
+
+```jsx
+const App = () => {
+  return (
+    <div>
+      <Parent>
+        <SetterChild />
+        <div>
+          <DisplayChild />
+        </div>
+      </Parent>
+    </div>
+  )
+}
+```
+
+## Better off using Context API
+
+I think this approach is great for simple cases where you don't need to share state between multiple levels of child components.
+If you need to share state between multiple levels of child components, I think it is better to use the Context API.
+
+For example we can rewrite the above example using the Context API.
+
+```jsx
+const MyStateContext = React.createContext()
+
+const Parent = ({ children }) => {
+  const [state, setState] = useState('')
+
+  return (
+    <MyStateContext.Provider value={{ state, setState }}>
+      {children}
+    </MyStateContext.Provider>
+  )
+}
+
+const SetterChild = () => {
+  const { setState } = useContext(MyStateContext)
+
+  return (
+    <div>
+      <button onClick={() => setState('1')}>Set state</button>
+    </div>
+  )
+}
+
+const DisplayChild = () => {
+  const { state } = useContext(MyStateContext)
+
+  return (
+    <div>
+      <p>State: {state}</p>
+    </div>
+  )
+}
+
+const App = () => {
+  return (
+    <div>
+      <Parent>
+        <SetterChild />
+        <div>
+          <DisplayChild />
+        </div>
+      </Parent>
+    </div>
+  )
+}
+```
