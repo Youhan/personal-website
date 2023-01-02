@@ -1,0 +1,97 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+import image1 from './vue-components.gif'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2023-01-02',
+  title: 'Sharing state between child components using React.Children',
+  description:
+    'A quick react tip on the React.Children and how it can be used instead of Context API to share state between child components.',
+  tags: ['React Tips', 'Snippets'],
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+Today I came across [React.Children](https://beta.reactjs.org/reference/react/Children) and I thought it was a great way
+to share state between child components without using the Context API.
+
+In the following example, we have a parent component that has two child components. The parent component has a state and
+it passes the state and a setter function to the child components. The child components can then use the setter function to
+update the state of the parent component.
+
+```jsx
+import React, { useState } from 'react'
+
+const Parent = ({ children }) => {
+  const [state, setState] = useState('')
+
+  return <div>{children}</div>
+}
+```
+
+One of the children is a setter component that has a button that when clicked, it sets the state of the parent component. This
+components accepts a setter function as a prop and uses it to set the state.
+
+```jsx
+const SetterChild = ({ setState }) => {
+  return (
+    <div>
+      <button onClick={() => setState('1')}>Set state</button>
+    </div>
+  )
+}
+```
+
+The second child is just displaying the state of the parent component.This component accepts the state as a prop and uses it to display the state.
+
+```jsx
+const DisplayChild = ({ state }) => {
+  return (
+    <div>
+      <p>State: {state}</p>
+    </div>
+  )
+}
+```
+
+And here is how we put together the parent and the children.
+
+```jsx
+const App = () => {
+  return (
+    <div>
+      <Parent>
+        <SetterChild />
+        <DisplayChild />
+      </Parent>
+    </div>
+  )
+}
+```
+
+## Using React.Children
+
+Now, we can use React.Children to pass the state and the setter function to the children. We can use the `React.Children.map`
+function to map over the children and pass the state and the setter function to each child.
+
+```jsx
+const Parent = ({ children }) => {
+  const [state, setState] = useState('')
+
+  return (
+    <div>
+      {React.Children.map(children, (child) => {
+        return React.cloneElement(child, { state, setState })
+      })}
+    </div>
+  )
+}
+```
+
+Note that we are using `React.cloneElement` to clone the child and pass the state and the setter function to it. That is
+because we can't directly modify the props of a child component. We have to clone it first and then pass the props to it.
+
+With this approach, we don't need to pass the state and the setter function to the children manually. I think it is a great way to
+avoid poluting the code with props.
