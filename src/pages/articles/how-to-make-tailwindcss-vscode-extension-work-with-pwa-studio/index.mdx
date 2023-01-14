@@ -1,0 +1,49 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+import image1 from './01.png'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2023-01-13',
+  title:
+    'How to make Tailwind CSS IntelliSense extension work with Magento PWA Studio',
+  description:
+    'Magento PWA Studio used CSS modules and Tailwind CSS. The Tailwind CSS IntelliSense extension does not work with CSS modules. Here is how I made it work.',
+  tags: ['vscode', 'pwa-studio', 'tailwindcss', 'magento'],
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+## Problem
+
+[Magento PWA Studio](https://github.com/magento/pwa-studio) used CSS modules and Tailwind CSS.
+The content of `*.module.css` files are like below snippet, [Read more here](https://github.com/magento/pwa-studio/discussions/3241).
+
+```CSS
+.pageWrapper {
+    composes: pt-16 from global;
+    composes: max-w-menu from global;
+    composes: mx-auto from global;
+    composes: px-20 from global;
+}
+```
+
+The Tailwind CSS IntelliSense [vscode extension](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
+does not work with this by default, because it is looking for `class="` or `className="`, etc. in a file.
+
+## Solution
+
+Currently there is an experimental option for the IntelliSense extension named `classRegex` whic is mentioned [here](https://github.com/tailwindlabs/tailwindcss/issues/7553#issuecomment-735915659).
+Using this option, we can make the extension work with CSS modules.
+
+```JSON
+{
+    "tailwindCSS.experimental.classRegex": [
+        ["composes: ([^;]*)"]
+    ]
+}
+```
+
+Add the above snippet to your vscode settings and your are good to go. If you want it to work only with your pwa-studio project, you can add it to `.vscode/settings.json` file in your repository.
+
+<Image src={image1} alt="Shopify vue vuex" />
