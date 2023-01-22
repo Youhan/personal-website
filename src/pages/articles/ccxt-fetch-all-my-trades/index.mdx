@@ -55,7 +55,9 @@ async fetchTradesFromExchange(sinceTimestamp) {
     if (trades.length === 0) {
         break;
     }
-    allTrades.push(trades)
+    // concat the trades to the allTrades array
+    allTrades = allTrades.concat(trades);
+
     from_id = trades[trades.length - 1]['id']
   }
 
