@@ -40,7 +40,7 @@ async fetchTradesFromExchange(sinceTimestamp) {
     // if the is no form_id, it means we are fetching
     // the first batch of trades
     if (from_id === undefined) {
-      since = sinceTimestamp;
+      since = sinceTimestamp + 1;
       params = undefined;
     } else {
       // if there is a from_id, it means we are fetching
