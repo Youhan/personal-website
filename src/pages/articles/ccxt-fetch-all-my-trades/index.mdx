@@ -1,0 +1,66 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2023-01-22',
+  title: 'How to fetch all my trades from Binance using ccxt library',
+  description:
+    "Binance won't let you fetch all your trades at once, but you can do it recursively. Here is how to do it using CCXT library.",
+  tags: ['javascript', 'binance', 'trading'],
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+Binance like any other exchange won't let you fetch all your trades at once, but you can do it recursively.
+They key is to pass a param named `fromId` to the `fetchMyTrades` method.
+
+The follwing function accepts a `sinceTimestamp` and returns all trades since that timestamp.
+
+Note that I am using [ccxt](https://github.com/ccxt/ccxt) library to fetch trades from Binance.
+
+```javascript
+
+const exchange = new ccxt["binanceusdm"]({
+    newUpdates: false,
+    apiKey: process.env.BINANCE_API_KEY,
+    secret: process.env.BINANCE_API_SECRET,
+});
+
+async fetchTradesFromExchange(sinceTimestamp) {
+  let from_id = undefined;
+  let allTrades = []
+  const symbol = this.symbol;
+  const limit = 100;
+
+  while (true) {
+    let params = undefined;
+    let since = undefined;
+
+    // if the is no form_id, it means we are fetching
+    // the first batch of trades
+    if (from_id === undefined) {
+      since = sinceTimestamp;
+      params = undefined;
+    } else {
+      // if there is a from_id, it means we are fetching
+      // the next batch of trades
+      // we need to set the fromId to the last trade's id
+      since = undefined;
+      params = {
+          'fromId': from_id + 1,
+      }
+    }
+    const trades = await exchange.fetchMyTrades(symbol, since, limit, params);
+    if (trades.length === 0) {
+        break;
+    }
+    allTrades.push(trades)
+    from_id = trades[trades.length - 1]['id']
+  }
+
+  return allTrades;
+}
+```
+
+Hope this is helpful for someone out there! 🙏
