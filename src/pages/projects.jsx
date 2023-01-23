@@ -179,7 +179,7 @@ export default function Projects() {
   return (
     <>
       <Head>
-        <title>Projects - Alireza Jahandieh</title>
+        <title>Projects - Alireza Jahandideh</title>
         <meta
           name="description"
           content="Things I’ve made trying to put my dent in the universe."
