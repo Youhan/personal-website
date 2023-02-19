@@ -1,0 +1,36 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+import image1 from './20c4f0449fec818baf0363792398159dd1d9991299acdc894b3c89111fa5ea51.png'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2023-02-19',
+  title: 'How to create gradient border with Tailwind CSS',
+  description:
+    'This is how I managed to create a gradient border with Tailwind CSS.',
+  tags: ['TailwindCSS', "Snippet"],
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+## Give me the code
+
+```html
+    <div class="relative rounded-2xl p-8 border-black/30">
+        <div class="absolute -inset-px bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl" aria-hidden="true"></div>
+        <div class="absolute inset-0 bg-zinc-900 rounded-2xl" aria-hidden="true"></div>
+        <div class="z-10 text-zinc-100">Nice border around me!</div>
+    </div>
+```
+
+<Image src={image1} alt="TailwindCSS gradient border" />
+
+## Explain
+
+First we have a `div` that has a `p-8` for it's content and `border-black/30`, a transparent border so that we could see what is behind it. 
+
+What is behind it is a div that is position absolute and has `-inset-px`, meaning it is the same size as the parent div but 1px outside of it. This is the gradient border. It has a `bg-gradient-to-r` class that makes it a gradient from left to right. The `from-yellow-400` and `to-pink-400` classes are the colors of the gradient.
+
+Then there is the second `div` that is also position absolute and has `inset-0` class. This is the background color.
+
+Enjoy ✌🏻
