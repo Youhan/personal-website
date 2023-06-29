@@ -28,20 +28,19 @@ Everything you need to know about creating custom input for FormKit is documente
 <script setup>
 const props = defineProps({
   context: Object,
-})
+});
 
 const value = computed({
   get: () => {
-    return props.context?._value
+    return props.context?._value;
   },
   set: (value) => {
-    props.context?.node.input(value)
+    props.context?.node.input(value);
   },
-})
+});
 
-const label = computed(() => props.context?.label)
-const name = computed(() => props.context?.name)
-
+const label = props.context?.label;
+const name = props.context?.name;
 </script>
 
 <template>
@@ -63,6 +62,7 @@ const name = computed(() => props.context?.name)
     </div>
   </HeadlessSwitchGroup>
 </template>
+
 ```
 
 This is just a Headless UI toggle with a custom label which goes in front of the toggle. I used a `v-model` to for 2 way binding of `value`.
