@@ -1,0 +1,103 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+
+export const meta = {
+  author: 'Alireza Jahandideh',
+  date: '2023-05-29',
+  title: 'Create a custom toggle input for Vue FormKit using Headless UI',
+  description: 'This is my first experimentation to create a custom input for Formkit. I used Headless UI toggle to create a custom toggle input.',
+  tags: ['Vue', 'FormKit', "Headless UI"],
+}
+
+export default (props) => <ArticleLayout meta={meta} {...props} />
+
+Formkit is an awesome library when it comes to going beyond simple login forms. If you are not familiar with it yet, go to their website and see what you can do with it. In this post I am going to share how I build a custom toggle input for FormKit. This is just an experiment that I did with FormKit and this is in no way a production code.
+
+## What is FormKit?
+
+FormKit is a library that helps you build complex forms in Vue. It is built on top of Vue 3 and uses the composition API. It is very easy to use and has a lot of features. You can check out [Formkit Website](https://formkit.com/) for more information.
+
+## Why would you need a custom toggle input?
+
+In fact FormKit already has a toggle input and it is great. I just wanted to try to create a custom toggle input using Headless UI and FormKit for the sake of doing it!
+
+## Custom Component
+
+Everything you need to know about creating custom input for FormKit is documented here: [Custom Inputs](https://formkit.com/essentials/custom-inputs). Here is what I ended up with:
+
+```html
+<script setup>
+const props = defineProps({
+  context: Object,
+})
+
+const value = computed({
+  get: () => {
+    return props.context?._value
+  },
+  set: (value) => {
+    props.context?.node.input(value)
+  },
+})
+
+const label = computed(() => props.context?.label)
+const name = computed(() => props.context?.name)
+
+</script>
+
+<template>
+  <HeadlessSwitchGroup>
+    <div class="flex items-center">
+      <HeadlessSwitch
+        v-model="value"
+        :name="name"
+        :class="value ? 'bg-blue-600' : 'bg-gray-200 dark:bg-zinc-700'"
+        class="relative inline-flex h-6 w-11 items-center rounded-full"
+      >
+        <span class="sr-only">{{ label }}</span>
+        <span
+          :class="value ? 'translate-x-6' : 'translate-x-1'"
+          class="inline-block h-4 w-4 transform rounded-full bg-white transition"
+        />
+      </HeadlessSwitch>
+      <HeadlessSwitchLabel class="ml-4 text-sm text-zinc-700 dark:text-zinc-200">{{ label }}</HeadlessSwitchLabel>
+    </div>
+  </HeadlessSwitchGroup>
+</template>
+```
+
+This is just a Headless UI toggle with a custom label which goes in front of the toggle. I used a `v-model` to for 2 way binding of `value`.
+
+FormKit provides this component with `prop.context` and you can get `context._value` and when you want to update the value you need to call `context.node.input(value)`. So I figured I can write a computed property with getter and setter to achieve that.
+
+The last part is to register your component with FormKit as a custom input: 
+
+```js
+/// formkit.config.ts
+import { DefaultConfigOptions, createInput } from "@formkit/vue";
+import FormKitToggle from "~/components/FormKit/FormKitToggle.vue";
+
+const config: DefaultConfigOptions = {
+  // ...
+  inputs: {
+    mytoggle: createInput(FormKitToggle)
+  }
+  // ...
+};
+
+export default config;
+
+```
+
+## Usage
+
+Now you can use your custom toggle input like this:
+
+```html
+
+<FormKit
+  type="mytoggle"
+  // rest of the props
+/>
+```
+
+

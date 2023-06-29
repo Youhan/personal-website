@@ -64,10 +64,7 @@ export default function About() {
               I’m Alireza. I live in Winnipeg, where I design the future.
             </h1>
             <div className="mt-6 space-y-7 text-base text-zinc-600 dark:text-zinc-400">
-              <p>....</p>
-              <p>....</p>
-              <p>....</p>
-              <p>....</p>
+              <p>coming soon...</p>
             </div>
           </div>
           <div className="lg:pl-20">
