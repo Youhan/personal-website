@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import { Container } from '@/components/Container'
 import { formatDate } from '@/lib/formatDate'
 import { Prose } from '@/components/Prose'
+import Giscus from '@giscus/react';
 
 function ArrowLeftIcon(props) {
   return (
@@ -80,6 +81,24 @@ export function ArticleLayout({
                 </div>
               </header>
               <Prose className="mt-8">{children}</Prose>
+
+              <hr className="my-16 border-zinc-200 dark:border-zinc-700" />
+
+              
+              <Giscus
+                id="comments"
+                repo="Youhan/personal-website"
+                repoId="R_kgDOInIIpA"
+                category="General"
+                categoryId="DIC_kwDOInIIpM4CXtHq"
+                mapping="pathname"
+                reactionsEnabled="1"
+                emitMetadata="0"
+                inputPosition="bottom"
+                theme="preferred_color_scheme"
+                lang="en"
+                loading="lazy"
+              />
             </article>
           </div>
         </div>
